@@ -4,11 +4,12 @@ import { Types } from 'mongoose';
 import { User, IUser, UserRole } from '@/models/User.model';
 import { ResponseError } from '@/utils/erros';
 import { GLOBAL_ENV } from '@/shared/constants';
+import { cloudinaryService } from '@/services/cloudinary/cloudinary.service';
 
 export interface AuthTokenPayload {
   userId: string;
-  email: string;
-  rol: UserRole;
+  username: string;
+  rolSistema: UserRole;
 }
 
 /**
@@ -23,28 +24,69 @@ export class AuthService {
    * Registra un nuevo usuario
    */
   async register(
+    username: string,
     nombre: string,
-    email: string,
+    tipoUsuario: string,
+    cargo: string,
+    identificacion: string,
     password: string,
-    rol: UserRole
+    rolSistema: UserRole,
+    tarjetaProfesional?: string,
+    firma?: string,
+    esInterpretacion?: boolean,
+    esProduccion?: boolean,
+    esCalidad?: boolean
   ): Promise<IUser> {
     // Verificar si el usuario ya existe
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const existingUser = await User.findOne({ username: username.toUpperCase() });
     if (existingUser) {
-      throw new ResponseError(400, 'El email ya está registrado');
+      throw new ResponseError(400, 'El username ya está registrado');
+    }
+
+    // Verificar si la identificación ya existe
+    const existingId = await User.findOne({ identificacion });
+    if (existingId) {
+      throw new ResponseError(400, 'La identificación ya está registrada');
     }
 
     // Hash de la contraseña
     const saltRounds = 10;
     const hashPassword = await bcrypt.hash(password, saltRounds);
 
+    // Subir firma a Cloudinary si se proporciona
+    let firmaUrl: string | undefined;
+    let firmaPublicId: string | undefined;
+
+    if (firma) {
+      try {
+        // Si la firma viene como base64, subirla a Cloudinary
+        const publicId = `firmas/${username.toUpperCase()}_${identificacion.replace(/\./g, '_')}`;
+        const uploadResult = await cloudinaryService.uploadSignature(firma, 'firmas', publicId);
+        firmaUrl = uploadResult.secure_url;
+        firmaPublicId = uploadResult.public_id;
+      } catch (error) {
+        console.error('Error al subir firma a Cloudinary:', error);
+        // Si falla la subida, no bloquear el registro pero registrar el error
+        throw new ResponseError(500, 'Error al subir la firma a Cloudinary');
+      }
+    }
+
     // Crear usuario
     const user = await User.create({
+      username: username.toUpperCase(),
       nombre,
-      email: email.toLowerCase(),
+      tipoUsuario,
+      cargo,
+      identificacion,
+      tarjetaProfesional,
+      firmaUrl,
+      firmaPublicId,
       hashPassword,
-      rol,
-      activo: true
+      rolSistema,
+      activo: true,
+      esInterpretacion: esInterpretacion || false,
+      esProduccion: esProduccion || false,
+      esCalidad: esCalidad || false
     });
 
     return user;
@@ -53,9 +95,9 @@ export class AuthService {
   /**
    * Autentica un usuario y genera token JWT
    */
-  async login(email: string, password: string): Promise<{ user: IUser; token: string }> {
+  async login(username: string, password: string): Promise<{ user: IUser; token: string }> {
     // Buscar usuario
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ username: username.toUpperCase() });
     if (!user) {
       throw new ResponseError(401, 'Credenciales inválidas');
     }
@@ -74,8 +116,8 @@ export class AuthService {
     // Generar token JWT
     const payload: AuthTokenPayload = {
       userId: (user._id as Types.ObjectId).toString(),
-      email: user.email,
-      rol: user.rol
+      username: user.username,
+      rolSistema: user.rolSistema
     };
 
     const token = jwt.sign(payload, this.JWT_SECRET, {

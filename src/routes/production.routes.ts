@@ -25,11 +25,11 @@ router.use(authenticate);
  *           enum: [CREADO, VALIDADO, CALCULADO, PROGRAMADO, PRODUCIDO, QC, ETIQUETADO, FINALIZADO]
  *         description: Filtrar por estado
  *       - in: query
- *         name: medicamentoId
+ *         name: lineaProduccion
  *         schema:
  *           type: string
- *           format: ObjectId
- *         description: Filtrar por ID de medicamento
+ *           enum: [ONCO, ESTERIL]
+ *         description: Filtrar por línea de producción
  *       - in: query
  *         name: fechaDesde
  *         schema:
@@ -157,17 +157,23 @@ router.get('/:id', cacheMiddleware(600, 'production'), productionController.getB
  *           schema:
  *             $ref: '#/components/schemas/CreateProductionRequest'
  *           example:
- *             paciente:
- *               nombre: "Pedro García"
- *               documento: "12345678"
- *               edad: 45
- *               peso: 75
- *             medicamentoId: "507f1f77bcf86cd799439011"
- *             laboratorioId: "507f1f77bcf86cd799439012"
- *             vehiculoId: "507f1f77bcf86cd799439013"
- *             envaseId: "507f1f77bcf86cd799439014"
- *             dosisPrescrita: 50
- *             unidadDosis: "mg"
+ *             lineaProduccion: "ESTERIL"
+ *             fechaProduccion: "2024-12-15T07:00:00.000Z"
+ *             qfInterpretacion: "ROSA LEONOR BONETT VILA"
+ *             qfProduccion: "SANTIAGO ARBELÁEZ GUZMAN"
+ *             qfCalidad: "DAVID RESTREPO CRESPO"
+ *             mezclas:
+ *               - paciente:
+ *                   nombre: "Pedro García"
+ *                   documento: "12345678"
+ *                   aseguradora: "EPS Sura"
+ *                   diagnostico: "Cáncer de pulmón - Estadio III"
+ *                 medicamentoId: "507f1f77bcf86cd799439011"
+ *                 vehiculoId: "507f1f77bcf86cd799439013"
+ *                 envaseId: "507f1f77bcf86cd799439014"
+ *                 dosisPrescrita: 16
+ *                 unidadDosis: "mg"
+ *                 cantidadMezclas: 1
  *     responses:
  *       201:
  *         description: Producción creada exitosamente

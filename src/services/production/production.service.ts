@@ -1,34 +1,47 @@
 import { Types } from 'mongoose';
-import { Production, IProduction } from '@/models/Production.model';
+import { Production, IProduction, IMezcla, LineaProduccion } from '@/models/Production.model';
 import { domainValidationService } from '@/services/validation/domainValidation.service';
 import { calculationEngineService } from '@/services/calculation/calculationEngine.service';
 import { productionWorkflowService } from '@/services/workflow/productionWorkflow.service';
 import { auditService } from '@/services/workflow/audit.service';
 import { ResponseError } from '@/utils/erros';
-import { Medicine } from '@/models/Medicine.model';
+import { Medicine, IMedicine } from '@/models/Medicine.model';
+import { Vehicle, IVehicle } from '@/models/Vehicle.model';
+import { Container, IContainer } from '@/models/Container.model';
+import { Stability } from '@/models/Stability.model';
+import { User, IUser } from '@/models/User.model';
 
-export interface CreateProductionDTO {
+export interface CreateMezclaDTO {
   paciente: {
     nombre: string;
     documento: string;
-    edad: number;
-    peso?: number;
+    aseguradora: string;
+    diagnostico: string;
   };
   medicamentoId: string;
-  laboratorioId: string;
   vehiculoId: string;
   envaseId: string;
   dosisPrescrita: number;
   unidadDosis: string;
+  cantidadMezclas?: number; // Cantidad de mezclas para este paciente/medicamento
+}
+
+export interface CreateProductionDTO {
+  lineaProduccion: LineaProduccion;
+  fechaProduccion?: Date;
+  qfInterpretacion?: string;
+  qfProduccion?: string;
+  qfCalidad?: string;
+  mezclas: CreateMezclaDTO[]; // Array de mezclas a crear
 }
 
 /**
  * Servicio principal de Producciones
- * Orquesta la creación, validación, cálculo y gestión de producciones
+ * Orquesta la creación, validación, cálculo y gestión de órdenes de producción
  */
 export class ProductionService {
   /**
-   * Genera un código único para la producción
+   * Genera un código único para la orden de producción
    */
   private generateProductionCode(): string {
     const now = new Date();
@@ -41,40 +54,168 @@ export class ProductionService {
   }
 
   /**
-   * Crea una nueva producción
+   * Genera un lote de mezcla único
+   */
+  private generateLoteMezcla(lineaProduccion: LineaProduccion, fechaProduccion: Date): string {
+    const now = fechaProduccion || new Date();
+    const year = String(now.getFullYear()).slice(-2);
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hour = String(now.getHours()).padStart(2, '0');
+    const minute = String(now.getMinutes()).padStart(2, '0');
+    const random = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+    
+    const lineaCode = lineaProduccion === 'ONCO' ? 'ON' : 'ET';
+    return `HG${year}${month}${day}-${lineaCode}-${random}`;
+  }
+
+  /**
+   * Crea una nueva orden de producción con múltiples mezclas
    */
   async createProduction(
     data: CreateProductionDTO,
     userId: Types.ObjectId
   ): Promise<IProduction> {
-    // Obtener medicamento para validar línea productiva
-    const medicamento = await Medicine.findById(data.medicamentoId);
-    if (!medicamento) {
-      throw new ResponseError(404, 'Medicamento no encontrado');
+    if (!data.mezclas || data.mezclas.length === 0) {
+      throw new ResponseError(400, 'Debe incluir al menos una mezcla');
     }
 
-    // Validar dominio farmacéutico completo
-    await domainValidationService.validateCompleteDomain({
-      medicamentoId: new Types.ObjectId(data.medicamentoId),
-      laboratorioId: new Types.ObjectId(data.laboratorioId),
-      vehiculoId: new Types.ObjectId(data.vehiculoId),
-      envaseId: new Types.ObjectId(data.envaseId),
-      lineaProductiva: medicamento.lineaProductiva
-    });
+    const mezclas: IMezcla[] = [];
+    const fechaProduccion = data.fechaProduccion || new Date();
+
+    // Procesar cada mezcla
+    for (const mezclaData of data.mezclas) {
+      // Obtener medicamento
+      const medicamento = await Medicine.findById(mezclaData.medicamentoId);
+      if (!medicamento) {
+        throw new ResponseError(404, `Medicamento ${mezclaData.medicamentoId} no encontrado`);
+      }
+
+      // Obtener vehículo
+      const vehiculo = await Vehicle.findById(mezclaData.vehiculoId);
+      if (!vehiculo) {
+        throw new ResponseError(404, `Vehículo ${mezclaData.vehiculoId} no encontrado`);
+      }
+
+      // Obtener envase
+      const envase = await Container.findById(mezclaData.envaseId);
+      if (!envase) {
+        throw new ResponseError(404, `Envase ${mezclaData.envaseId} no encontrado`);
+      }
+
+      // Buscar estabilidad para obtener laboratorioId
+      const estabilidad = await Stability.findOne({
+        medicamentoId: new Types.ObjectId(mezclaData.medicamentoId),
+        vehiculoId: new Types.ObjectId(mezclaData.vehiculoId),
+        envaseId: new Types.ObjectId(mezclaData.envaseId)
+      });
+
+      if (!estabilidad) {
+        throw new ResponseError(404, 'No se encontró estabilidad para esta combinación de medicamento, vehículo y envase');
+      }
+
+      // Validar dominio farmacéutico
+      await domainValidationService.validateCompleteDomain({
+        medicamentoId: new Types.ObjectId(mezclaData.medicamentoId),
+        laboratorioId: estabilidad.laboratorioId,
+        vehiculoId: new Types.ObjectId(mezclaData.vehiculoId),
+        envaseId: new Types.ObjectId(mezclaData.envaseId),
+        lineaProductiva: data.lineaProduccion
+      });
+
+      // Calcular resultados para esta mezcla
+      const resultados = await calculationEngineService.calculateFromDatabase(
+        new Types.ObjectId(mezclaData.medicamentoId),
+        estabilidad.laboratorioId,
+        new Types.ObjectId(mezclaData.vehiculoId),
+        new Types.ObjectId(mezclaData.envaseId),
+        mezclaData.dosisPrescrita,
+        mezclaData.unidadDosis
+      );
+
+      // Calcular volúmenes detallados
+      const volumenVehiculo = resultados.volumenFinal - resultados.volumenExtraer;
+      const volumenMezcla = resultados.volumenExtraer;
+      const volumenTotal = resultados.volumenFinal;
+
+      // Generar lote de mezcla
+      const loteMezcla = this.generateLoteMezcla(data.lineaProduccion, fechaProduccion);
+
+      // Calcular fecha de vencimiento (por defecto 24 horas después de producción)
+      const fechaVencimiento = new Date(fechaProduccion);
+      fechaVencimiento.setHours(fechaVencimiento.getHours() + 24);
+
+      // Crear objeto mezcla
+      const mezcla: IMezcla = {
+        paciente: mezclaData.paciente,
+        medicamento: {
+          id: medicamento._id as Types.ObjectId,
+          nombre: medicamento.nombre,
+          concentracion: medicamento.concentracion,
+          viaAdministracion: medicamento.viaAdministracion,
+          dosisPrescrita: mezclaData.dosisPrescrita,
+          unidadDosis: mezclaData.unidadDosis
+        },
+        envase: {
+          id: envase._id as Types.ObjectId,
+          tipo: envase.tipo,
+          nombre: envase.tipo // El nombre es el mismo que el tipo
+        },
+        vehiculo: {
+          id: vehiculo._id as Types.ObjectId,
+          nombre: vehiculo.nombre,
+          volumenVehiculo: volumenVehiculo
+        },
+        calculos: {
+          volumenExtraer: resultados.volumenExtraer,
+          volumenMezcla: volumenMezcla,
+          volumenVehiculo: volumenVehiculo,
+          volumenTotal: volumenTotal,
+          unidadesInsumo: resultados.unidadesInsumo
+        },
+        loteMezcla: loteMezcla,
+        fechaVencimiento: fechaVencimiento,
+        cantidadMezclas: mezclaData.cantidadMezclas || 1
+      };
+
+      mezclas.push(mezcla);
+    }
+
+    // Asignar QF automáticamente si no se proporcionaron
+    let qfInterpretacion = data.qfInterpretacion;
+    let qfProduccion = data.qfProduccion;
+    let qfCalidad = data.qfCalidad;
+
+    if (!qfInterpretacion || !qfProduccion || !qfCalidad) {
+      // Buscar usuarios con funciones farmacéuticas
+      const qfInterp = await User.findOne({ esInterpretacion: true, activo: true });
+      const qfProd = await User.findOne({ esProduccion: true, activo: true });
+      const qfQual = await User.findOne({ esCalidad: true, activo: true });
+
+      if (!qfInterpretacion && qfInterp) {
+        qfInterpretacion = qfInterp.nombre;
+      }
+      if (!qfProduccion && qfProd) {
+        qfProduccion = qfProd.nombre;
+      }
+      if (!qfCalidad && qfQual) {
+        qfCalidad = qfQual.nombre;
+      }
+    }
 
     // Generar código único
     const codigo = this.generateProductionCode();
 
-    // Crear producción
+    // Crear orden de producción
     const production = await Production.create({
       codigo,
-      paciente: data.paciente,
-      medicamentoId: new Types.ObjectId(data.medicamentoId),
-      laboratorioId: new Types.ObjectId(data.laboratorioId),
-      vehiculoId: new Types.ObjectId(data.vehiculoId),
-      envaseId: new Types.ObjectId(data.envaseId),
-      dosisPrescrita: data.dosisPrescrita,
-      unidadDosis: data.unidadDosis,
+      fechaProduccion: fechaProduccion,
+      qfInterpretacion: qfInterpretacion,
+      qfProduccion: qfProduccion,
+      qfCalidad: qfCalidad,
+      lineaProduccion: data.lineaProduccion,
+      cantidadMezclas: mezclas.length,
+      mezclas: mezclas,
       estado: 'CREADO',
       versionMotorCalculo: calculationEngineService.getVersion(),
       timestamps: {
@@ -90,14 +231,14 @@ export class ProductionService {
       'CREATE',
       {
         codigo: production.codigo,
-        medicamentoId: data.medicamentoId,
-        paciente: data.paciente.nombre
+        cantidadMezclas: mezclas.length,
+        lineaProduccion: data.lineaProduccion
       },
       userId
     );
 
     const populatedProduction = await Production.findById(production._id)
-      .populate('medicamentoId laboratorioId vehiculoId envaseId creadoPor');
+      .populate('creadoPor validadoPor calculadoPor programadoPor producidoPor qcPor etiquetadoPor finalizadoPor', 'username nombre tipoUsuario cargo identificacion tarjetaProfesional rolSistema');
     
     if (!populatedProduction) {
       throw new ResponseError(500, 'Error al obtener la producción creada');
@@ -107,7 +248,7 @@ export class ProductionService {
   }
 
   /**
-   * Valida y calcula una producción
+   * Valida y calcula una orden de producción
    */
   async validateAndCalculate(
     productionId: Types.ObjectId,
@@ -119,53 +260,40 @@ export class ProductionService {
       throw new ResponseError(404, 'Producción no encontrada');
     }
 
-    // Validar dominio si aún no está validado
-    if (production.estado === 'CREADO') {
-      const medicamento = await Medicine.findById(production.medicamentoId);
+    // Validar todas las mezclas
+    for (const mezcla of production.mezclas) {
+      const medicamento = await Medicine.findById(mezcla.medicamento.id);
       if (!medicamento) {
-        throw new ResponseError(404, 'Medicamento no encontrado');
+        throw new ResponseError(404, `Medicamento ${mezcla.medicamento.id} no encontrado`);
+      }
+
+      // Buscar estabilidad para obtener laboratorioId
+      const estabilidad = await Stability.findOne({
+        medicamentoId: mezcla.medicamento.id,
+        vehiculoId: mezcla.vehiculo.id,
+        envaseId: mezcla.envase.id
+      });
+
+      if (!estabilidad) {
+        throw new ResponseError(404, 'No se encontró estabilidad para esta combinación de medicamento, vehículo y envase');
       }
 
       await domainValidationService.validateCompleteDomain({
-        medicamentoId: production.medicamentoId,
-        laboratorioId: production.laboratorioId!,
-        vehiculoId: production.vehiculoId!,
-        envaseId: production.envaseId!,
-        lineaProductiva: medicamento.lineaProductiva
+        medicamentoId: mezcla.medicamento.id,
+        laboratorioId: estabilidad.laboratorioId,
+        vehiculoId: mezcla.vehiculo.id,
+        envaseId: mezcla.envase.id,
+        lineaProductiva: production.lineaProduccion
       });
+    }
 
-      // Transicionar a VALIDADO
+    // Transicionar a VALIDADO si está en CREADO
+    if (production.estado === 'CREADO') {
       await productionWorkflowService.validateProduction(
         productionId,
         userId,
         userRole as any
       );
-    }
-
-    // Calcular resultados
-    const resultados = await calculationEngineService.calculateFromDatabase(
-      production.medicamentoId,
-      production.laboratorioId!,
-      production.vehiculoId!,
-      production.envaseId!,
-      production.dosisPrescrita,
-      production.unidadDosis
-    );
-
-    // Actualizar producción con resultados y transicionar a CALCULADO
-    const updatedProduction = await Production.findByIdAndUpdate(
-      productionId,
-      {
-        $set: {
-          resultadosCalculo: resultados,
-          versionMotorCalculo: calculationEngineService.getVersion()
-        }
-      },
-      { new: true }
-    );
-
-    if (!updatedProduction) {
-      throw new ResponseError(500, 'Error al actualizar la producción');
     }
 
     // Transicionar a CALCULADO
@@ -176,7 +304,7 @@ export class ProductionService {
     );
 
     const finalProduction = await Production.findById(productionId)
-      .populate('medicamentoId laboratorioId vehiculoId envaseId creadoPor');
+      .populate('creadoPor validadoPor calculadoPor programadoPor producidoPor qcPor etiquetadoPor finalizadoPor', 'username nombre tipoUsuario cargo identificacion tarjetaProfesional rolSistema');
     
     if (!finalProduction) {
       throw new ResponseError(500, 'Error al obtener la producción actualizada');
@@ -190,8 +318,7 @@ export class ProductionService {
    */
   async getProductionById(productionId: Types.ObjectId): Promise<IProduction | null> {
     return await Production.findById(productionId)
-      .populate('medicamentoId laboratorioId vehiculoId envaseId')
-      .populate('creadoPor validadoPor calculadoPor programadoPor producidoPor qcPor etiquetadoPor finalizadoPor', 'nombre email rol');
+      .populate('creadoPor validadoPor calculadoPor programadoPor producidoPor qcPor etiquetadoPor finalizadoPor', 'username nombre tipoUsuario cargo identificacion tarjetaProfesional rolSistema');
   }
 
   /**
@@ -199,7 +326,7 @@ export class ProductionService {
    */
   async getProductions(filters: {
     estado?: string;
-    medicamentoId?: string;
+    lineaProduccion?: LineaProduccion;
     fechaDesde?: Date;
     fechaHasta?: Date;
     limit?: number;
@@ -211,8 +338,8 @@ export class ProductionService {
       query.estado = filters.estado;
     }
 
-    if (filters.medicamentoId) {
-      query.medicamentoId = new Types.ObjectId(filters.medicamentoId);
+    if (filters.lineaProduccion) {
+      query.lineaProduccion = filters.lineaProduccion;
     }
 
     if (filters.fechaDesde || filters.fechaHasta) {
@@ -230,10 +357,10 @@ export class ProductionService {
 
     const [productions, total] = await Promise.all([
       Production.find(query)
-        .populate('medicamentoId laboratorioId vehiculoId envaseId')
         .sort({ createdAt: -1 })
         .limit(limit)
-        .skip(skip),
+        .skip(skip)
+        .populate('creadoPor validadoPor calculadoPor programadoPor producidoPor qcPor etiquetadoPor finalizadoPor', 'nombre email rol'),
       Production.countDocuments(query)
     ]);
 
@@ -247,4 +374,3 @@ export class ProductionService {
 }
 
 export const productionService = new ProductionService();
-

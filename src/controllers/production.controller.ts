@@ -89,8 +89,8 @@ export class ProductionController {
         filters.estado = req.query.estado;
       }
 
-      if (req.query.medicamentoId) {
-        filters.medicamentoId = req.query.medicamentoId;
+      if (req.query.lineaProduccion) {
+        filters.lineaProduccion = req.query.lineaProduccion;
       }
 
       if (req.query.fechaDesde) {
@@ -154,7 +154,7 @@ export class ProductionController {
       const production = await productionService.validateAndCalculate(
         new Types.ObjectId(id),
         req.user.userId as any,
-        req.user.rol
+        req.user.rolSistema
       );
 
       res.status(200).json({
@@ -202,7 +202,7 @@ export class ProductionController {
         new Types.ObjectId(id),
         estado,
         req.user.userId as any,
-        req.user.rol
+        req.user.rolSistema
       );
 
       res.status(200).json({

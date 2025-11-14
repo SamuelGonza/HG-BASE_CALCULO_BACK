@@ -63,59 +63,128 @@ const options: swaggerJsdoc.Options = {
               format: 'ObjectId',
               example: '507f1f77bcf86cd799439011'
             },
+            username: {
+              type: 'string',
+              example: 'RBOCNETT'
+            },
             nombre: {
               type: 'string',
-              example: 'Juan Pérez'
+              example: 'ROSA LEONOR BONETT VILA'
             },
-            email: {
+            tipoUsuario: {
               type: 'string',
-              format: 'email',
-              example: 'juan.perez@hospital.com'
+              enum: ['QUÍMICO FARMACÉUTICO', 'ADMINISTRADOR', 'INVITADO', 'TÉCNICO'],
+              example: 'QUÍMICO FARMACÉUTICO'
             },
-            rol: {
+            cargo: {
+              type: 'string',
+              example: 'DIRECTORA TÉCNICA'
+            },
+            identificacion: {
+              type: 'string',
+              example: '43.977.097'
+            },
+            tarjetaProfesional: {
+              type: 'string',
+              example: '43.977.097'
+            },
+            firmaUrl: {
+              type: 'string',
+              example: 'https://res.cloudinary.com/cloud_name/image/upload/v1234567890/firmas/RBOCNETT_43_977_097.png'
+            },
+            firmaPublicId: {
+              type: 'string',
+              example: 'firmas/RBOCNETT_43_977_097'
+            },
+            rolSistema: {
               type: 'string',
               enum: ['AUXILIAR', 'QUIMICO', 'COORDINADOR', 'AUDITOR'],
-              example: 'QUIMICO'
+              example: 'COORDINADOR'
             },
             activo: {
               type: 'boolean',
               example: true
+            },
+            esInterpretacion: {
+              type: 'boolean',
+              example: true
+            },
+            esProduccion: {
+              type: 'boolean',
+              example: false
+            },
+            esCalidad: {
+              type: 'boolean',
+              example: false
             }
           }
         },
         RegisterRequest: {
           type: 'object',
-          required: ['nombre', 'email', 'password', 'rol'],
+          required: ['username', 'nombre', 'tipoUsuario', 'cargo', 'identificacion', 'password', 'rolSistema'],
           properties: {
+            username: {
+              type: 'string',
+              example: 'RBOCNETT'
+            },
             nombre: {
               type: 'string',
-              example: 'Juan Pérez'
+              example: 'ROSA LEONOR BONETT VILA'
             },
-            email: {
+            tipoUsuario: {
               type: 'string',
-              format: 'email',
-              example: 'juan.perez@hospital.com'
+              enum: ['QUÍMICO FARMACÉUTICO', 'ADMINISTRADOR', 'INVITADO', 'TÉCNICO'],
+              example: 'QUÍMICO FARMACÉUTICO'
+            },
+            cargo: {
+              type: 'string',
+              example: 'DIRECTORA TÉCNICA'
+            },
+            identificacion: {
+              type: 'string',
+              example: '43.977.097'
+            },
+            tarjetaProfesional: {
+              type: 'string',
+              example: '43.977.097'
+            },
+            firma: {
+              type: 'string',
+              format: 'base64',
+              description: 'Firma en formato base64 (se subirá a Cloudinary automáticamente). Formato: data:image/png;base64,...',
+              example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...'
             },
             password: {
               type: 'string',
               format: 'password',
               example: 'password123'
             },
-            rol: {
+            rolSistema: {
               type: 'string',
               enum: ['AUXILIAR', 'QUIMICO', 'COORDINADOR', 'AUDITOR'],
-              example: 'QUIMICO'
+              example: 'COORDINADOR'
+            },
+            esInterpretacion: {
+              type: 'boolean',
+              example: true
+            },
+            esProduccion: {
+              type: 'boolean',
+              example: false
+            },
+            esCalidad: {
+              type: 'boolean',
+              example: false
             }
           }
         },
         LoginRequest: {
           type: 'object',
-          required: ['email', 'password'],
+          required: ['username', 'password'],
           properties: {
-            email: {
+            username: {
               type: 'string',
-              format: 'email',
-              example: 'juan.perez@hospital.com'
+              example: 'RBOCNETT'
             },
             password: {
               type: 'string',
@@ -167,7 +236,7 @@ const options: swaggerJsdoc.Options = {
         },
         Paciente: {
           type: 'object',
-          required: ['nombre', 'documento', 'edad'],
+          required: ['nombre', 'documento', 'aseguradora', 'diagnostico'],
           properties: {
             nombre: {
               type: 'string',
@@ -177,21 +246,19 @@ const options: swaggerJsdoc.Options = {
               type: 'string',
               example: '12345678'
             },
-            edad: {
-              type: 'number',
-              minimum: 0,
-              example: 45
+            aseguradora: {
+              type: 'string',
+              example: 'EPS Sura'
             },
-            peso: {
-              type: 'number',
-              minimum: 0,
-              example: 75
+            diagnostico: {
+              type: 'string',
+              example: 'Cáncer de pulmón - Estadio III'
             }
           }
         },
-        CreateProductionRequest: {
+        CreateMezclaRequest: {
           type: 'object',
-          required: ['paciente', 'medicamentoId', 'laboratorioId', 'vehiculoId', 'envaseId', 'dosisPrescrita', 'unidadDosis'],
+          required: ['paciente', 'medicamentoId', 'vehiculoId', 'envaseId', 'dosisPrescrita', 'unidadDosis'],
           properties: {
             paciente: {
               $ref: '#/components/schemas/Paciente'
@@ -200,11 +267,6 @@ const options: swaggerJsdoc.Options = {
               type: 'string',
               format: 'ObjectId',
               example: '507f1f77bcf86cd799439011'
-            },
-            laboratorioId: {
-              type: 'string',
-              format: 'ObjectId',
-              example: '507f1f77bcf86cd799439012'
             },
             vehiculoId: {
               type: 'string',
@@ -224,6 +286,156 @@ const options: swaggerJsdoc.Options = {
             unidadDosis: {
               type: 'string',
               example: 'mg'
+            },
+            cantidadMezclas: {
+              type: 'number',
+              minimum: 1,
+              default: 1,
+              example: 1
+            }
+          }
+        },
+        CreateProductionRequest: {
+          type: 'object',
+          required: ['lineaProduccion', 'mezclas'],
+          properties: {
+            lineaProduccion: {
+              type: 'string',
+              enum: ['ONCO', 'ESTERIL'],
+              example: 'ESTERIL'
+            },
+            fechaProduccion: {
+              type: 'string',
+              format: 'date-time',
+              example: '2024-12-15T07:00:00.000Z'
+            },
+            qfInterpretacion: {
+              type: 'string',
+              example: 'ROSA LEONOR BONETT VILA'
+            },
+            qfProduccion: {
+              type: 'string',
+              example: 'SANTIAGO ARBELÁEZ GUZMAN'
+            },
+            qfCalidad: {
+              type: 'string',
+              example: 'DAVID RESTREPO CRESPO'
+            },
+            mezclas: {
+              type: 'array',
+              minItems: 1,
+              items: {
+                $ref: '#/components/schemas/CreateMezclaRequest'
+              }
+            }
+          }
+        },
+        Mezcla: {
+          type: 'object',
+          properties: {
+            paciente: {
+              $ref: '#/components/schemas/Paciente'
+            },
+            medicamento: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  format: 'ObjectId'
+                },
+                nombre: {
+                  type: 'string',
+                  example: 'Ondansetron'
+                },
+                concentracion: {
+                  type: 'string',
+                  example: '2mg/ml'
+                },
+                viaAdministracion: {
+                  type: 'string',
+                  example: 'IV'
+                },
+                dosisPrescrita: {
+                  type: 'number',
+                  example: 16
+                },
+                unidadDosis: {
+                  type: 'string',
+                  example: 'mg'
+                }
+              }
+            },
+            envase: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  format: 'ObjectId'
+                },
+                tipo: {
+                  type: 'string',
+                  example: 'Bolsa'
+                },
+                nombre: {
+                  type: 'string',
+                  example: 'Bolsa de infusión 100ml'
+                }
+              }
+            },
+            vehiculo: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  format: 'ObjectId'
+                },
+                nombre: {
+                  type: 'string',
+                  example: 'SSN 0.9%'
+                },
+                volumenVehiculo: {
+                  type: 'number',
+                  example: 92
+                }
+              }
+            },
+            calculos: {
+              type: 'object',
+              properties: {
+                volumenExtraer: {
+                  type: 'number',
+                  example: 8
+                },
+                volumenMezcla: {
+                  type: 'number',
+                  example: 8
+                },
+                volumenVehiculo: {
+                  type: 'number',
+                  example: 92
+                },
+                volumenTotal: {
+                  type: 'number',
+                  example: 100
+                },
+                unidadesInsumo: {
+                  type: 'number',
+                  example: 1
+                }
+              }
+            },
+            loteMezcla: {
+              type: 'string',
+              example: 'HG0117-160724-ET-01954'
+            },
+            fechaVencimiento: {
+              type: 'string',
+              format: 'date-time',
+              example: '2024-12-16T07:00:00.000Z'
+            },
+            cantidadMezclas: {
+              type: 'number',
+              example: 1
             }
           }
         },
@@ -239,57 +451,36 @@ const options: swaggerJsdoc.Options = {
               type: 'string',
               example: 'PROD-20241215-0001'
             },
-            paciente: {
-              $ref: '#/components/schemas/Paciente'
-            },
-            medicamentoId: {
+            fechaProduccion: {
               type: 'string',
-              format: 'ObjectId'
+              format: 'date-time',
+              example: '2024-12-15T07:00:00.000Z'
             },
-            laboratorioId: {
+            qfInterpretacion: {
               type: 'string',
-              format: 'ObjectId'
+              example: 'ROSA LEONOR BONETT VILA'
             },
-            vehiculoId: {
+            qfProduccion: {
               type: 'string',
-              format: 'ObjectId'
+              example: 'SANTIAGO ARBELÁEZ GUZMAN'
             },
-            envaseId: {
+            qfCalidad: {
               type: 'string',
-              format: 'ObjectId'
+              example: 'DAVID RESTREPO CRESPO'
             },
-            dosisPrescrita: {
+            lineaProduccion: {
+              type: 'string',
+              enum: ['ONCO', 'ESTERIL'],
+              example: 'ESTERIL'
+            },
+            cantidadMezclas: {
               type: 'number',
-              example: 50
+              example: 5
             },
-            unidadDosis: {
-              type: 'string',
-              example: 'mg'
-            },
-            resultadosCalculo: {
-              type: 'object',
-              properties: {
-                volumenExtraer: {
-                  type: 'number',
-                  example: 16.67
-                },
-                volumenFinal: {
-                  type: 'number',
-                  example: 16.67
-                },
-                unidadesInsumo: {
-                  type: 'number',
-                  example: 1
-                },
-                lote: {
-                  type: 'string',
-                  example: 'LOTE-20241215-120000-001'
-                },
-                fechaVencimiento: {
-                  type: 'string',
-                  format: 'date-time',
-                  example: '2024-12-18T12:00:00.000Z'
-                }
+            mezclas: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/Mezcla'
               }
             },
             estado: {

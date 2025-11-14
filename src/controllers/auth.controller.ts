@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Types } from 'mongoose';
 import { authService } from '@/services/auth/auth.service';
 import { ResponseError } from '@/utils/erros';
 import { UserRole } from '@/models/User.model';
@@ -10,26 +11,61 @@ export class AuthController {
    */
   async register(req: Request, res: Response): Promise<void> {
     try {
-      const { nombre, email, password, rol } = req.body;
+      const { 
+        username, 
+        nombre, 
+        tipoUsuario, 
+        cargo, 
+        identificacion, 
+        password, 
+        rolSistema,
+        tarjetaProfesional,
+        firma,
+        esInterpretacion,
+        esProduccion,
+        esCalidad
+      } = req.body;
 
-      if (!nombre || !email || !password || !rol) {
-        throw new ResponseError(400, 'Faltan campos requeridos: nombre, email, password, rol');
+      if (!username || !nombre || !tipoUsuario || !cargo || !identificacion || !password || !rolSistema) {
+        throw new ResponseError(400, 'Faltan campos requeridos: username, nombre, tipoUsuario, cargo, identificacion, password, rolSistema');
       }
 
-      if (!['AUXILIAR', 'QUIMICO', 'COORDINADOR', 'AUDITOR'].includes(rol)) {
-        throw new ResponseError(400, 'Rol inválido');
+      if (!['AUXILIAR', 'QUIMICO', 'COORDINADOR', 'AUDITOR'].includes(rolSistema)) {
+        throw new ResponseError(400, 'Rol de sistema inválido');
       }
 
-      const user = await authService.register(nombre, email, password, rol as UserRole);
+      const user = await authService.register(
+        username,
+        nombre,
+        tipoUsuario,
+        cargo,
+        identificacion,
+        password,
+        rolSistema as UserRole,
+        tarjetaProfesional,
+        firma,
+        esInterpretacion,
+        esProduccion,
+        esCalidad
+      );
 
       res.status(201).json({
         ok: true,
         message: 'Usuario registrado exitosamente',
         data: {
           id: user._id,
+          username: user.username,
           nombre: user.nombre,
-          email: user.email,
-          rol: user.rol
+          tipoUsuario: user.tipoUsuario,
+          cargo: user.cargo,
+          identificacion: user.identificacion,
+          tarjetaProfesional: user.tarjetaProfesional,
+          firmaUrl: user.firmaUrl,
+          firmaPublicId: user.firmaPublicId,
+          rolSistema: user.rolSistema,
+          esInterpretacion: user.esInterpretacion,
+          esProduccion: user.esProduccion,
+          esCalidad: user.esCalidad
         }
       });
     } catch (error) {
@@ -53,13 +89,13 @@ export class AuthController {
    */
   async login(req: Request, res: Response): Promise<void> {
     try {
-      const { email, password } = req.body;
+      const { username, password } = req.body;
 
-      if (!email || !password) {
-        throw new ResponseError(400, 'Email y contraseña son requeridos');
+      if (!username || !password) {
+        throw new ResponseError(400, 'Username y contraseña son requeridos');
       }
 
-      const { user, token } = await authService.login(email, password);
+      const { user, token } = await authService.login(username, password);
 
       res.status(200).json({
         ok: true,
@@ -68,9 +104,16 @@ export class AuthController {
           token,
           user: {
             id: user._id,
+            username: user.username,
             nombre: user.nombre,
-            email: user.email,
-            rol: user.rol
+            tipoUsuario: user.tipoUsuario,
+            cargo: user.cargo,
+            identificacion: user.identificacion,
+            tarjetaProfesional: user.tarjetaProfesional,
+            rolSistema: user.rolSistema,
+            esInterpretacion: user.esInterpretacion,
+            esProduccion: user.esProduccion,
+            esCalidad: user.esCalidad
           }
         }
       });
@@ -99,7 +142,7 @@ export class AuthController {
         throw new ResponseError(401, 'Usuario no autenticado');
       }
 
-      const user = await authService.getUserById(req.user.userId as any);
+      const user = await authService.getUserById(new Types.ObjectId(req.user.userId));
       if (!user) {
         throw new ResponseError(404, 'Usuario no encontrado');
       }
@@ -108,10 +151,19 @@ export class AuthController {
         ok: true,
         data: {
           id: user._id,
+          username: user.username,
           nombre: user.nombre,
-          email: user.email,
-          rol: user.rol,
-          activo: user.activo
+          tipoUsuario: user.tipoUsuario,
+          cargo: user.cargo,
+          identificacion: user.identificacion,
+          tarjetaProfesional: user.tarjetaProfesional,
+          firmaUrl: user.firmaUrl,
+          firmaPublicId: user.firmaPublicId,
+          rolSistema: user.rolSistema,
+          activo: user.activo,
+          esInterpretacion: user.esInterpretacion,
+          esProduccion: user.esProduccion,
+          esCalidad: user.esCalidad
         }
       });
     } catch (error) {
@@ -146,7 +198,7 @@ export class AuthController {
       }
 
       await authService.changePassword(
-        req.user.userId as any,
+        new Types.ObjectId(req.user.userId),
         currentPassword,
         newPassword
       );
@@ -172,6 +224,3 @@ export class AuthController {
 }
 
 export const authController = new AuthController();
-
-
-

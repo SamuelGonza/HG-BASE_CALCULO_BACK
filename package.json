@@ -17,6 +17,7 @@
     "packageManager": "pnpm@10.12.1",
     "dependencies": {
         "bcrypt": "^6.0.0",
+        "cloudinary": "^2.8.0",
         "cors": "^2.8.5",
         "dayjs": "^1.11.18",
         "dotenv": "^17.2.3",

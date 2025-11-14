@@ -3,75 +3,93 @@ import { Production } from '@/models/Production.model';
 import { Document, DocumentType } from '@/models/Document.model';
 import { ResponseError } from '@/utils/erros';
 import { calculationEngineService } from '../calculation/calculationEngine.service';
+import { cloudinaryService } from '@/services/cloudinary/cloudinary.service';
 
 /**
- * Servicio de Generación de Documentos
- * Genera automáticamente todos los documentos requeridos para la producción
+ * Servicio de Generaci?n de Documentos
+ * Genera autom?ticamente todos los documentos requeridos para la producci?n
  */
 export class DocumentGenerationService {
   private readonly PLANTILLA_VERSION = '1.0.0';
 
   /**
-   * Genera un documento de solicitud de producción
+   * Genera un documento de solicitud de producci?n
    */
   async generateSolicitud(
     productionId: Types.ObjectId,
     userId: Types.ObjectId
   ): Promise<string> {
     const production = await Production.findById(productionId)
-      .populate('medicamentoId laboratorioId vehiculoId envaseId paciente');
+      .populate('creadoPor validadoPor calculadoPor programadoPor producidoPor qcPor etiquetadoPor finalizadoPor', 'username nombre tipoUsuario cargo rolSistema');
 
     if (!production) {
-      throw new ResponseError(404, 'Producción no encontrada');
+      throw new ResponseError(404, 'Producci?n no encontrada');
     }
 
-    // TODO: Implementar generación real de PDF usando librería como pdfkit o puppeteer
-    // Por ahora retornamos una URL simulada
-    const fileUrl = `/documents/solicitud-${productionId}.pdf`;
+    // TODO: Implementar generaci?n real de PDF usando librer?a como pdfkit o puppeteer
+    // Por ahora simulamos la generaci?n y subimos a Cloudinary
+    const fileName = `solicitud-${productionId.toString()}`;
+    const pdfBuffer = Buffer.from(`PDF simulado para solicitud de producci?n ${productionId}`);
+    
+    // Subir a Cloudinary
+    const uploadResult = await cloudinaryService.uploadDocument(
+      pdfBuffer,
+      'documentos',
+      fileName
+    );
 
     await Document.create({
       productionId,
       tipo: 'SOLICITUD',
-      fileUrl,
+      fileUrl: uploadResult.secure_url,
+      filePublicId: uploadResult.public_id,
       versionPlantilla: this.PLANTILLA_VERSION,
       generadoPor: userId,
       generadoEn: new Date()
     });
 
-    return fileUrl;
+    return uploadResult.secure_url;
   }
 
   /**
-   * Genera una orden de producción
+   * Genera una orden de producci?n
    */
   async generateOrden(
     productionId: Types.ObjectId,
     userId: Types.ObjectId
   ): Promise<string> {
     const production = await Production.findById(productionId)
-      .populate('medicamentoId laboratorioId vehiculoId envaseId');
+      .populate('creadoPor validadoPor calculadoPor programadoPor producidoPor qcPor etiquetadoPor finalizadoPor', 'username nombre tipoUsuario cargo rolSistema');
 
     if (!production) {
-      throw new ResponseError(404, 'Producción no encontrada');
+      throw new ResponseError(404, 'Producci?n no encontrada');
     }
 
-    if (!production.resultadosCalculo) {
-      throw new ResponseError(400, 'La producción debe estar calculada para generar la orden');
+    if (production.estado === 'CREADO' || production.estado === 'VALIDADO') {
+      throw new ResponseError(400, 'La producci?n debe estar calculada para generar la orden');
     }
 
-    // TODO: Implementar generación real de PDF
-    const fileUrl = `/documents/orden-${productionId}.pdf`;
+    // TODO: Implementar generaci?n real de PDF
+    const fileName = `orden-${productionId.toString()}`;
+    const pdfBuffer = Buffer.from(`PDF simulado para orden de producci?n ${productionId}`);
+    
+    const uploadResult = await cloudinaryService.uploadDocument(
+      pdfBuffer,
+      'documentos',
+      fileName
+    );
 
     await Document.create({
       productionId,
       tipo: 'ORDEN',
-      fileUrl,
+      fileUrl: uploadResult.secure_url,
+      filePublicId: uploadResult.public_id,
       versionPlantilla: this.PLANTILLA_VERSION,
       generadoPor: userId,
       generadoEn: new Date()
     });
 
-    return fileUrl;
+    return uploadResult.secure_url;
   }
 
   /**
@@ -82,29 +100,37 @@ export class DocumentGenerationService {
     userId: Types.ObjectId
   ): Promise<string> {
     const production = await Production.findById(productionId)
-      .populate('medicamentoId laboratorioId vehiculoId envaseId');
+      .populate('creadoPor validadoPor calculadoPor programadoPor producidoPor qcPor etiquetadoPor finalizadoPor', 'username nombre tipoUsuario cargo rolSistema');
 
     if (!production) {
-      throw new ResponseError(404, 'Producción no encontrada');
+      throw new ResponseError(404, 'Producci?n no encontrada');
     }
 
-    if (!production.resultadosCalculo) {
-      throw new ResponseError(400, 'La producción debe estar calculada para generar la solicitud de insumos');
+    if (production.estado === 'CREADO' || production.estado === 'VALIDADO') {
+      throw new ResponseError(400, 'La producci?n debe estar calculada para generar la solicitud de insumos');
     }
 
-    // TODO: Implementar generación real de PDF/Excel
-    const fileUrl = `/documents/insumos-${productionId}.pdf`;
+    // TODO: Implementar generaci?n real de PDF/Excel
+    const fileName = `insumos-${productionId.toString()}`;
+    const pdfBuffer = Buffer.from(`PDF simulado para solicitud de insumos ${productionId}`);
+    
+    const uploadResult = await cloudinaryService.uploadDocument(
+      pdfBuffer,
+      'documentos',
+      fileName
+    );
 
     await Document.create({
       productionId,
       tipo: 'INSUMOS',
-      fileUrl,
+      fileUrl: uploadResult.secure_url,
+      filePublicId: uploadResult.public_id,
       versionPlantilla: this.PLANTILLA_VERSION,
       generadoPor: userId,
       generadoEn: new Date()
     });
 
-    return fileUrl;
+    return uploadResult.secure_url;
   }
 
   /**
@@ -115,29 +141,37 @@ export class DocumentGenerationService {
     userId: Types.ObjectId
   ): Promise<string> {
     const production = await Production.findById(productionId)
-      .populate('medicamentoId laboratorioId vehiculoId envaseId');
+      .populate('creadoPor validadoPor calculadoPor programadoPor producidoPor qcPor etiquetadoPor finalizadoPor', 'username nombre tipoUsuario cargo rolSistema');
 
     if (!production) {
-      throw new ResponseError(404, 'Producción no encontrada');
+      throw new ResponseError(404, 'Producci?n no encontrada');
     }
 
     if (production.estado !== 'QC' && production.estado !== 'ETIQUETADO' && production.estado !== 'FINALIZADO') {
-      throw new ResponseError(400, 'La producción debe estar en estado QC o superior para generar el documento de control de calidad');
+      throw new ResponseError(400, 'La producci?n debe estar en estado QC o superior para generar el documento de control de calidad');
     }
 
-    // TODO: Implementar generación real de PDF
-    const fileUrl = `/documents/qc-${productionId}.pdf`;
+    // TODO: Implementar generaci?n real de PDF
+    const fileName = `qc-${productionId.toString()}`;
+    const pdfBuffer = Buffer.from(`PDF simulado para control de calidad ${productionId}`);
+    
+    const uploadResult = await cloudinaryService.uploadDocument(
+      pdfBuffer,
+      'documentos',
+      fileName
+    );
 
     await Document.create({
       productionId,
       tipo: 'QC',
-      fileUrl,
+      fileUrl: uploadResult.secure_url,
+      filePublicId: uploadResult.public_id,
       versionPlantilla: this.PLANTILLA_VERSION,
       generadoPor: userId,
       generadoEn: new Date()
     });
 
-    return fileUrl;
+    return uploadResult.secure_url;
   }
 
   /**
@@ -148,29 +182,37 @@ export class DocumentGenerationService {
     userId: Types.ObjectId
   ): Promise<string> {
     const production = await Production.findById(productionId)
-      .populate('medicamentoId laboratorioId vehiculoId envaseId');
+      .populate('creadoPor validadoPor calculadoPor programadoPor producidoPor qcPor etiquetadoPor finalizadoPor', 'username nombre tipoUsuario cargo rolSistema');
 
     if (!production) {
-      throw new ResponseError(404, 'Producción no encontrada');
+      throw new ResponseError(404, 'Producci?n no encontrada');
     }
 
     if (production.estado !== 'ETIQUETADO' && production.estado !== 'FINALIZADO') {
-      throw new ResponseError(400, 'La producción debe estar etiquetada para generar las etiquetas');
+      throw new ResponseError(400, 'La producci?n debe estar etiquetada para generar las etiquetas');
     }
 
-    // TODO: Implementar generación real de etiquetas imprimibles
-    const fileUrl = `/documents/etiquetas-${productionId}.pdf`;
+    // TODO: Implementar generaci?n real de etiquetas imprimibles
+    const fileName = `etiquetas-${productionId.toString()}`;
+    const pdfBuffer = Buffer.from(`PDF simulado para etiquetas ${productionId}`);
+    
+    const uploadResult = await cloudinaryService.uploadDocument(
+      pdfBuffer,
+      'documentos',
+      fileName
+    );
 
     await Document.create({
       productionId,
       tipo: 'ETIQUETAS',
-      fileUrl,
+      fileUrl: uploadResult.secure_url,
+      filePublicId: uploadResult.public_id,
       versionPlantilla: this.PLANTILLA_VERSION,
       generadoPor: userId,
       generadoEn: new Date()
     });
 
-    return fileUrl;
+    return uploadResult.secure_url;
   }
 
   /**
@@ -181,33 +223,41 @@ export class DocumentGenerationService {
     userId: Types.ObjectId
   ): Promise<string> {
     const production = await Production.findById(productionId)
-      .populate('medicamentoId laboratorioId vehiculoId envaseId');
+      .populate('creadoPor validadoPor calculadoPor programadoPor producidoPor qcPor etiquetadoPor finalizadoPor', 'username nombre tipoUsuario cargo rolSistema');
 
     if (!production) {
-      throw new ResponseError(404, 'Producción no encontrada');
+      throw new ResponseError(404, 'Producci?n no encontrada');
     }
 
     if (production.estado !== 'FINALIZADO') {
-      throw new ResponseError(400, 'La producción debe estar finalizada para generar el acta de entrega');
+      throw new ResponseError(400, 'La producci?n debe estar finalizada para generar el acta de entrega');
     }
 
-    // TODO: Implementar generación real de PDF
-    const fileUrl = `/documents/acta-${productionId}.pdf`;
+    // TODO: Implementar generaci?n real de PDF
+    const fileName = `acta-${productionId.toString()}`;
+    const pdfBuffer = Buffer.from(`PDF simulado para acta de entrega ${productionId}`);
+    
+    const uploadResult = await cloudinaryService.uploadDocument(
+      pdfBuffer,
+      'documentos',
+      fileName
+    );
 
     await Document.create({
       productionId,
       tipo: 'ACTA',
-      fileUrl,
+      fileUrl: uploadResult.secure_url,
+      filePublicId: uploadResult.public_id,
       versionPlantilla: this.PLANTILLA_VERSION,
       generadoPor: userId,
       generadoEn: new Date()
     });
 
-    return fileUrl;
+    return uploadResult.secure_url;
   }
 
   /**
-   * Genera todos los documentos disponibles según el estado de la producción
+   * Genera todos los documentos disponibles seg?n el estado de la producci?n
    */
   async generateAllAvailableDocuments(
     productionId: Types.ObjectId,
@@ -216,7 +266,7 @@ export class DocumentGenerationService {
     const production = await Production.findById(productionId);
 
     if (!production) {
-      throw new ResponseError(404, 'Producción no encontrada');
+      throw new ResponseError(404, 'Producci?n no encontrada');
     }
 
     const documents: Record<DocumentType, string | null> = {
@@ -271,16 +321,13 @@ export class DocumentGenerationService {
   }
 
   /**
-   * Obtiene todos los documentos generados para una producción
+   * Obtiene todos los documentos generados para una producci?n
    */
   async getProductionDocuments(productionId: Types.ObjectId) {
     return await Document.find({ productionId })
-      .populate('generadoPor', 'nombre email rol')
+      .populate('generadoPor', 'username nombre tipoUsuario cargo rolSistema')
       .sort({ generadoEn: -1 });
   }
 }
 
 export const documentGenerationService = new DocumentGenerationService();
-
-
-

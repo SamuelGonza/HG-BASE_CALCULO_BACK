@@ -17,10 +17,17 @@ const router: Router = Router();
  *           schema:
  *             $ref: '#/components/schemas/RegisterRequest'
  *           example:
- *             nombre: "Juan Pérez"
- *             email: "juan.perez@hospital.com"
+ *             username: "RBOCNETT"
+ *             nombre: "ROSA LEONOR BONETT VILA"
+ *             tipoUsuario: "QUÍMICO FARMACÉUTICO"
+ *             cargo: "DIRECTORA TÉCNICA"
+ *             identificacion: "43.977.097"
+ *             tarjetaProfesional: "43.977.097"
  *             password: "password123"
- *             rol: "QUIMICO"
+ *             rolSistema: "COORDINADOR"
+ *             esInterpretacion: true
+ *             esProduccion: false
+ *             esCalidad: false
  *     responses:
  *       201:
  *         description: Usuario registrado exitosamente
@@ -47,7 +54,7 @@ const router: Router = Router();
  *               camposFaltantes:
  *                 value:
  *                   ok: false
- *                   error: "Faltan campos requeridos: nombre, email, password, rol"
+ *                   error: "Faltan campos requeridos: username, nombre, tipoUsuario, cargo, identificacion, password, rolSistema"
  *               rolInvalido:
  *                 value:
  *                   ok: false
@@ -74,7 +81,7 @@ router.post('/register', authController.register.bind(authController));
  *           schema:
  *             $ref: '#/components/schemas/LoginRequest'
  *           example:
- *             email: "juan.perez@hospital.com"
+ *             username: "RBOCNETT"
  *             password: "password123"
  *     responses:
  *       200:

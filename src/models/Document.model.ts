@@ -11,7 +11,8 @@ export type DocumentType =
 export interface IDocument extends MongooseDocument {
   productionId: Types.ObjectId;
   tipo: DocumentType;
-  fileUrl: string;
+  fileUrl: string; // URL del documento en Cloudinary
+  filePublicId: string; // Public ID del documento en Cloudinary
   versionPlantilla: string;
   generadoPor: Types.ObjectId;
   generadoEn: Date;
@@ -30,7 +31,8 @@ const DocumentSchema = new Schema<IDocument>({
     required: true, 
     enum: ['SOLICITUD', 'ORDEN', 'INSUMOS', 'QC', 'ETIQUETAS', 'ACTA'] 
   },
-  fileUrl: { type: String, required: true, trim: true },
+  fileUrl: { type: String, required: true, trim: true }, // URL del documento en Cloudinary
+  filePublicId: { type: String, required: true, trim: true }, // Public ID del documento en Cloudinary
   versionPlantilla: { type: String, required: true, trim: true },
   generadoPor: { 
     type: Schema.Types.ObjectId, 

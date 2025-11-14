@@ -25,6 +25,10 @@ export const GLOBAL_ENV = {
     REDIS_PORT: process.env.REDIS_PORT as string,
     REDIS_PASSWORD: process.env.REDIS_PASSWORD as string,
 
+    CLOUD_NAME: process.env.CLOUD_NAME as string,
+    API_KEY_CLOUDINARY: process.env.API_KEY_CLOUDINARY as string,
+    API_SECRET_CLOUDINARY: process.env.API_SECRET_CLOUDINARY as string,
+
     FRONT_DOMAIN: process.env.FRONT_DOMAIN as string,
     ROUTER_SUBFIJE: process.env.ROUTER_SUBFIJE as string,
 };

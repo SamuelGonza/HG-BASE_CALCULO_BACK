@@ -66,7 +66,7 @@ export const authorize = (...allowedRoles: UserRole[]) => {
         throw new ResponseError(401, 'Usuario no autenticado');
       }
 
-      if (!allowedRoles.includes(req.user.rol)) {
+      if (!allowedRoles.includes(req.user.rolSistema)) {
         throw new ResponseError(
           403,
           `Acceso denegado. Se requiere uno de los siguientes roles: ${allowedRoles.join(', ')}`
