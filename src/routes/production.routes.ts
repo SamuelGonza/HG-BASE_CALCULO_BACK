@@ -289,9 +289,77 @@ router.post(
 
 /**
  * @swagger
+ * /productions/{id}/advance:
+ *   post:
+ *     summary: Avanza una producción al siguiente estado automáticamente
+ *     tags: [Productions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: ObjectId
+ *         description: ID de la producción
+ *     responses:
+ *       200:
+ *         description: Producción avanzada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Producción avanzada de CREADO a VALIDADO"
+ *                 data:
+ *                   $ref: '#/components/schemas/Production'
+ *       400:
+ *         description: Error de validación (ej. estado final)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               ok: false
+ *               error: "La producción ya está en estado final: FINALIZADO"
+ *       403:
+ *         description: Sin permisos para realizar la transición
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Producción no encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: No autenticado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+// Invalidar caché al avanzar estado
+router.post(
+  '/:id/advance',
+  authorize('AUXILIAR', 'QUIMICO', 'COORDINADOR'),
+  invalidateCache('production', (req) => req.params.id),
+  productionController.advance.bind(productionController)
+);
+
+/**
+ * @swagger
  * /productions/{id}/transition:
  *   post:
- *     summary: Transiciona una producción a un nuevo estado
+ *     summary: Transiciona una producción a un nuevo estado específico
  *     tags: [Productions]
  *     security:
  *       - bearerAuth: []

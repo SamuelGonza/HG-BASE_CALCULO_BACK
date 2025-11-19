@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import dayjs from 'dayjs';
 import { Production, IProduction, IMezcla, LineaProduccion } from '@/models/Production.model';
 import { domainValidationService } from '@/services/validation/domainValidation.service';
 import { calculationEngineService } from '@/services/calculation/calculationEngine.service';
@@ -44,10 +45,10 @@ export class ProductionService {
    * Genera un código único para la orden de producción
    */
   private generateProductionCode(): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+    const now = dayjs();
+    const year = now.format('YYYY');
+    const month = now.format('MM');
+    const day = now.format('DD');
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     
     return `PROD-${year}${month}${day}-${random}`;
@@ -57,12 +58,12 @@ export class ProductionService {
    * Genera un lote de mezcla único
    */
   private generateLoteMezcla(lineaProduccion: LineaProduccion, fechaProduccion: Date): string {
-    const now = fechaProduccion || new Date();
-    const year = String(now.getFullYear()).slice(-2);
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hour = String(now.getHours()).padStart(2, '0');
-    const minute = String(now.getMinutes()).padStart(2, '0');
+    const now = fechaProduccion ? dayjs(fechaProduccion) : dayjs();
+    const year = now.format('YY');
+    const month = now.format('MM');
+    const day = now.format('DD');
+    const hour = now.format('HH');
+    const minute = now.format('mm');
     const random = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
     
     const lineaCode = lineaProduccion === 'ONCO' ? 'ON' : 'ET';
@@ -81,7 +82,7 @@ export class ProductionService {
     }
 
     const mezclas: IMezcla[] = [];
-    const fechaProduccion = data.fechaProduccion || new Date();
+    const fechaProduccion = data.fechaProduccion ? dayjs(data.fechaProduccion).toDate() : dayjs().toDate();
 
     // Procesar cada mezcla
     for (const mezclaData of data.mezclas) {
@@ -142,8 +143,7 @@ export class ProductionService {
       const loteMezcla = this.generateLoteMezcla(data.lineaProduccion, fechaProduccion);
 
       // Calcular fecha de vencimiento (por defecto 24 horas después de producción)
-      const fechaVencimiento = new Date(fechaProduccion);
-      fechaVencimiento.setHours(fechaVencimiento.getHours() + 24);
+      const fechaVencimiento = dayjs(fechaProduccion).add(24, 'hours').toDate();
 
       // Crear objeto mezcla
       const mezcla: IMezcla = {
@@ -219,7 +219,7 @@ export class ProductionService {
       estado: 'CREADO',
       versionMotorCalculo: calculationEngineService.getVersion(),
       timestamps: {
-        creado: new Date()
+        creado: dayjs().toDate()
       },
       creadoPor: userId
     });

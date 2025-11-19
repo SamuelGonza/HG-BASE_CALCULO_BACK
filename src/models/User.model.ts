@@ -59,8 +59,7 @@ const UserSchema = new Schema<IUser>({
 });
 
 // Índices
-UserSchema.index({ username: 1 }, { unique: true });
 UserSchema.index({ activo: 1, rolSistema: 1 });
-UserSchema.index({ identificacion: 1 });
+UserSchema.index({ identificacion: 1 }, { unique: true });
 
 export const User = mongoose.model<IUser>('User', UserSchema);
