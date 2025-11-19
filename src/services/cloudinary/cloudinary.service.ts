@@ -64,7 +64,7 @@ export class CloudinaryService {
    * Sube un documento (PDF u otro formato) a Cloudinary
    * @param fileBase64 - Documento en formato base64 o buffer
    * @param folder - Carpeta donde guardar (ej: 'documentos')
-   * @param fileName - Nombre del archivo (sin extensión)
+   * @param fileName - Nombre del archivo (sin extensión, se agregará .pdf automáticamente)
    */
   async uploadDocument(
     fileBase64: string | Buffer,
@@ -80,11 +80,12 @@ export class CloudinaryService {
         folder: folder,
         resource_type: 'raw', // Documentos se suben como raw
         overwrite: false
-        // NO especificar format - Cloudinary lo detecta automáticamente
       };
 
       if (fileName) {
-        uploadOptions.public_id = fileName; // No incluir folder en public_id, ya está en el folder
+        // Asegurar que el nombre tenga la extensión .pdf para archivos raw
+        const fileNameWithExtension = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+        uploadOptions.public_id = fileNameWithExtension;
       }
 
       // Convertir Buffer a string base64 si es necesario
