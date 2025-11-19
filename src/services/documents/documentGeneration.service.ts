@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import dayjs from 'dayjs';
 import { Production } from '@/models/Production.model';
 import { Document, DocumentType } from '@/models/Document.model';
 import { ResponseError } from '@/utils/erros';
@@ -45,7 +46,7 @@ export class DocumentGenerationService {
       filePublicId: uploadResult.public_id,
       versionPlantilla: this.PLANTILLA_VERSION,
       generadoPor: userId,
-      generadoEn: new Date()
+      generadoEn: dayjs().toDate()
     });
 
     return uploadResult.secure_url;
@@ -86,7 +87,7 @@ export class DocumentGenerationService {
       filePublicId: uploadResult.public_id,
       versionPlantilla: this.PLANTILLA_VERSION,
       generadoPor: userId,
-      generadoEn: new Date()
+      generadoEn: dayjs().toDate()
     });
 
     return uploadResult.secure_url;
@@ -127,7 +128,7 @@ export class DocumentGenerationService {
       filePublicId: uploadResult.public_id,
       versionPlantilla: this.PLANTILLA_VERSION,
       generadoPor: userId,
-      generadoEn: new Date()
+      generadoEn: dayjs().toDate()
     });
 
     return uploadResult.secure_url;
@@ -168,7 +169,7 @@ export class DocumentGenerationService {
       filePublicId: uploadResult.public_id,
       versionPlantilla: this.PLANTILLA_VERSION,
       generadoPor: userId,
-      generadoEn: new Date()
+      generadoEn: dayjs().toDate()
     });
 
     return uploadResult.secure_url;
@@ -209,7 +210,7 @@ export class DocumentGenerationService {
       filePublicId: uploadResult.public_id,
       versionPlantilla: this.PLANTILLA_VERSION,
       generadoPor: userId,
-      generadoEn: new Date()
+      generadoEn: dayjs().toDate()
     });
 
     return uploadResult.secure_url;
@@ -250,7 +251,7 @@ export class DocumentGenerationService {
       filePublicId: uploadResult.public_id,
       versionPlantilla: this.PLANTILLA_VERSION,
       generadoPor: userId,
-      generadoEn: new Date()
+      generadoEn: dayjs().toDate()
     });
 
     return uploadResult.secure_url;
