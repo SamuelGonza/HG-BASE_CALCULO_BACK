@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import dayjs from 'dayjs';
 import { Production, IProduction, ProductionState } from '@/models/Production.model';
 import { UserRole } from '@/models/User.model';
 import { ResponseError } from '@/utils/erros';
@@ -104,7 +105,7 @@ export class ProductionWorkflowService {
     // Preparar actualización
     const updateData: any = {
       estado: newState,
-      [`timestamps.${newState.toLowerCase()}`]: new Date()
+      [`timestamps.${newState.toLowerCase()}`]: dayjs().toDate()
     };
 
     // Asignar usuario según el estado
@@ -116,7 +117,7 @@ export class ProductionWorkflowService {
       productionId,
       { $set: updateData },
       { new: true }
-    ).populate('medicamentoId laboratorioId vehiculoId envaseId creadoPor');
+    ).populate('creadoPor validadoPor calculadoPor programadoPor producidoPor qcPor etiquetadoPor finalizadoPor', 'username nombre tipoUsuario cargo identificacion tarjetaProfesional rolSistema');
 
     if (!updatedProduction) {
       throw new ResponseError(500, 'Error al actualizar la producción');

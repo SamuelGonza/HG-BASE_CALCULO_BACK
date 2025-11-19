@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import dayjs from 'dayjs';
 import { AuditLog } from '@/models/AuditLog.model';
 
 /**
@@ -28,7 +29,7 @@ export class AuditService {
         accion,
         cambios,
         usuarioId,
-        timestamp: new Date()
+        timestamp: dayjs().toDate()
       });
     } catch (error) {
       // No lanzar error para no interrumpir el flujo principal

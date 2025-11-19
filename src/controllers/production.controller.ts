@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { Types } from 'mongoose';
+import dayjs from 'dayjs';
 import { productionService } from '@/services/production/production.service';
 import { productionWorkflowService } from '@/services/workflow/productionWorkflow.service';
 import { ResponseError } from '@/utils/erros';
@@ -94,11 +95,11 @@ export class ProductionController {
       }
 
       if (req.query.fechaDesde) {
-        filters.fechaDesde = new Date(req.query.fechaDesde as string);
+        filters.fechaDesde = dayjs(req.query.fechaDesde as string).toDate();
       }
 
       if (req.query.fechaHasta) {
-        filters.fechaHasta = new Date(req.query.fechaHasta as string);
+        filters.fechaHasta = dayjs(req.query.fechaHasta as string).toDate();
       }
 
       if (req.query.limit) {
