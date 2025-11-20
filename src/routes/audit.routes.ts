@@ -13,6 +13,118 @@ router.use(authorize('AUDITOR', 'COORDINADOR'));
 
 /**
  * @swagger
+ * /audit/filters/entities:
+ *   get:
+ *     summary: Obtiene la lista de tipos de entidades disponibles
+ *     tags: [Audit]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de tipos de entidades
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["Production", "Medicine", "Document", "User"]
+ *       401:
+ *         description: No autenticado
+ *       403:
+ *         description: Sin permisos (requiere rol AUDITOR o COORDINADOR)
+ */
+router.get('/filters/entities', auditController.getAvailableEntities.bind(auditController));
+
+/**
+ * @swagger
+ * /audit/filters/users:
+ *   get:
+ *     summary: Obtiene la lista de usuarios que han realizado acciones auditables
+ *     tags: [Audit]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de usuarios
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                         format: ObjectId
+ *                       username:
+ *                         type: string
+ *                         example: "RBOCNETT"
+ *                       nombre:
+ *                         type: string
+ *                         example: "ROSA LEONOR BONETT VILA"
+ *                       rolSistema:
+ *                         type: string
+ *                         example: "COORDINADOR"
+ *       401:
+ *         description: No autenticado
+ *       403:
+ *         description: Sin permisos (requiere rol AUDITOR o COORDINADOR)
+ */
+router.get('/filters/users', auditController.getAvailableUsers.bind(auditController));
+
+/**
+ * @swagger
+ * /audit/filters/entities/{entidad}/items:
+ *   get:
+ *     summary: Obtiene las entidades específicas de un tipo que tienen auditoría
+ *     tags: [Audit]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: entidad
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Tipo de entidad
+ *         example: Production
+ *     responses:
+ *       200:
+ *         description: Lista de entidades específicas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       401:
+ *         description: No autenticado
+ *       403:
+ *         description: Sin permisos (requiere rol AUDITOR o COORDINADOR)
+ */
+router.get('/filters/entities/:entidad/items', auditController.getEntitiesOfType.bind(auditController));
+
+/**
+ * @swagger
  * /audit/{entidad}/{entidadId}:
  *   get:
  *     summary: Obtiene el historial de auditoría de una entidad específica

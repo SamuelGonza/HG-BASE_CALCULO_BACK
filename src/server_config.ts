@@ -10,6 +10,7 @@ import { swaggerSpec } from '@/docs/swagger.config';
 
 // Importar rutas
 import authRoutes from '@/routes/auth.routes';
+import userRoutes from '@/routes/user.routes';
 import productionRoutes from '@/routes/production.routes';
 import documentRoutes from '@/routes/document.routes';
 import catalogRoutes from '@/routes/catalog.routes';
@@ -68,6 +69,7 @@ app.use(`${GLOBAL_ENV.ROUTER_SUBFIJE}/docs`, swaggerUi.serve, swaggerUi.setup(sw
 
 // Cargar rutas
 app.use(`${GLOBAL_ENV.ROUTER_SUBFIJE}/auth`, authRoutes);
+app.use(`${GLOBAL_ENV.ROUTER_SUBFIJE}/users`, userRoutes);
 app.use(`${GLOBAL_ENV.ROUTER_SUBFIJE}/productions`, productionRoutes);
 app.use(`${GLOBAL_ENV.ROUTER_SUBFIJE}/documents`, documentRoutes);
 app.use(`${GLOBAL_ENV.ROUTER_SUBFIJE}/catalog`, catalogRoutes);

@@ -101,6 +101,67 @@ export class AuditController {
       });
     }
   }
+
+  /**
+   * Obtener lista de tipos de entidades disponibles
+   * GET /api/audit/filters/entities
+   */
+  async getAvailableEntities(req: Request, res: Response): Promise<void> {
+    try {
+      const entities = await auditService.getAvailableEntities();
+
+      res.status(200).json({
+        ok: true,
+        data: entities
+      });
+    } catch (error) {
+      res.status(500).json({
+        ok: false,
+        error: 'Error al obtener tipos de entidades'
+      });
+    }
+  }
+
+  /**
+   * Obtener lista de usuarios que han realizado acciones
+   * GET /api/audit/filters/users
+   */
+  async getAvailableUsers(req: Request, res: Response): Promise<void> {
+    try {
+      const users = await auditService.getAvailableUsers();
+
+      res.status(200).json({
+        ok: true,
+        data: users
+      });
+    } catch (error) {
+      res.status(500).json({
+        ok: false,
+        error: 'Error al obtener usuarios'
+      });
+    }
+  }
+
+  /**
+   * Obtener entidades específicas de un tipo
+   * GET /api/audit/filters/entities/:entidad/items
+   */
+  async getEntitiesOfType(req: Request, res: Response): Promise<void> {
+    try {
+      const { entidad } = req.params;
+      const entities = await auditService.getEntitiesOfType(entidad);
+
+      res.status(200).json({
+        ok: true,
+        data: entities
+      });
+    } catch (error) {
+      res.status(500).json({
+        ok: false,
+        error: 'Error al obtener entidades'
+      });
+    }
+  }
 }
 
 export const auditController = new AuditController();
