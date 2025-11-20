@@ -13,6 +13,61 @@ router.use(authorize('AUDITOR', 'COORDINADOR'));
 
 /**
  * @swagger
+ * /audit/all:
+ *   get:
+ *     summary: Obtiene todas las auditorías del sistema
+ *     tags: [Audit]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 100
+ *         description: Número máximo de registros a devolver
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Número de registros a saltar (paginación)
+ *     responses:
+ *       200:
+ *         description: Lista de todas las auditorías
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/AuditLog'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 250
+ *                     limit:
+ *                       type: integer
+ *                       example: 100
+ *                     skip:
+ *                       type: integer
+ *                       example: 0
+ *       401:
+ *         description: No autenticado
+ *       403:
+ *         description: Sin permisos (requiere rol AUDITOR o COORDINADOR)
+ */
+router.get('/all', auditController.getAllAudits.bind(auditController));
+
+/**
+ * @swagger
  * /audit/filters/entities:
  *   get:
  *     summary: Obtiene la lista de tipos de entidades disponibles

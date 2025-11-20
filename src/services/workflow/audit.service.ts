@@ -58,7 +58,7 @@ export class AuditService {
       entidad,
       entidadId
     })
-      .populate('usuarioId', 'nombre email rol')
+      .populate('usuarioId', 'nombre username email rolSistema')
       .sort({ timestamp: -1 })
       .limit(limit);
   }
@@ -87,9 +87,28 @@ export class AuditService {
     return await AuditLog.find({
       entidad
     })
-      .populate('usuarioId', 'nombre email rol')
+      .populate('usuarioId', 'nombre username email rolSistema')
       .sort({ timestamp: -1 })
       .limit(limit);
+  }
+
+  /**
+   * Obtiene todas las auditorías con paginación
+   */
+  async getAllAudits(limit: number = 100, skip: number = 0) {
+    const [audits, total] = await Promise.all([
+      AuditLog.find({})
+        .populate('usuarioId', 'nombre username email rolSistema')
+        .sort({ timestamp: -1 })
+        .limit(limit)
+        .skip(skip),
+      AuditLog.countDocuments({})
+    ]);
+
+    return {
+      audits,
+      total
+    };
   }
 
   /**

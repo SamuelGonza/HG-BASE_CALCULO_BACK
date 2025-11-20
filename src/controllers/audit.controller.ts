@@ -13,7 +13,10 @@ export class AuditController {
       const { entidad, entidadId } = req.params;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
 
+      console.log('[AUDIT] Obteniendo historial:', { entidad, entidadId, limit });
+
       if (!Types.ObjectId.isValid(entidadId)) {
+        console.error('[AUDIT] ID de entidad inválido:', entidadId);
         throw new ResponseError(400, 'ID de entidad inválido');
       }
 
@@ -23,11 +26,14 @@ export class AuditController {
         limit
       );
 
+      console.log('[AUDIT] Registros encontrados:', history.length);
+
       res.status(200).json({
         ok: true,
         data: history
       });
     } catch (error) {
+      console.error('[AUDIT ERROR]:', error);
       if (error instanceof ResponseError) {
         res.status(error.statusCode).json({
           ok: false,
@@ -51,7 +57,10 @@ export class AuditController {
       const { userId } = req.params;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
 
+      console.log('[AUDIT] Obteniendo acciones de usuario:', { userId, limit });
+
       if (!Types.ObjectId.isValid(userId)) {
+        console.error('[AUDIT] ID de usuario inválido:', userId);
         throw new ResponseError(400, 'ID de usuario inválido');
       }
 
@@ -60,11 +69,14 @@ export class AuditController {
         limit
       );
 
+      console.log('[AUDIT] Acciones encontradas:', actions.length);
+
       res.status(200).json({
         ok: true,
         data: actions
       });
     } catch (error) {
+      console.error('[AUDIT ERROR]:', error);
       if (error instanceof ResponseError) {
         res.status(error.statusCode).json({
           ok: false,
@@ -128,16 +140,52 @@ export class AuditController {
    */
   async getAvailableUsers(req: Request, res: Response): Promise<void> {
     try {
+      console.log('[AUDIT] Obteniendo usuarios disponibles');
       const users = await auditService.getAvailableUsers();
+      console.log('[AUDIT] Usuarios encontrados:', users.length);
 
       res.status(200).json({
         ok: true,
         data: users
       });
     } catch (error) {
+      console.error('[AUDIT ERROR]:', error);
       res.status(500).json({
         ok: false,
         error: 'Error al obtener usuarios'
+      });
+    }
+  }
+
+  /**
+   * Obtener todas las auditorías
+   * GET /api/audit/all
+   */
+  async getAllAudits(req: Request, res: Response): Promise<void> {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+      const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
+
+      console.log('[AUDIT] Obteniendo todas las auditorías:', { limit, skip });
+
+      const result = await auditService.getAllAudits(limit, skip);
+
+      console.log('[AUDIT] Total de auditorías:', result.total);
+
+      res.status(200).json({
+        ok: true,
+        data: result.audits,
+        pagination: {
+          total: result.total,
+          limit,
+          skip
+        }
+      });
+    } catch (error) {
+      console.error('[AUDIT ERROR]:', error);
+      res.status(500).json({
+        ok: false,
+        error: 'Error al obtener auditorías'
       });
     }
   }
