@@ -149,16 +149,24 @@ export class AuditController {
   async getEntitiesOfType(req: Request, res: Response): Promise<void> {
     try {
       const { entidad } = req.params;
+      
+      console.log('[AUDIT] Obteniendo entidades de tipo:', entidad);
+      
       const entities = await auditService.getEntitiesOfType(entidad);
+
+      console.log('[AUDIT] Entidades encontradas:', entities.length);
 
       res.status(200).json({
         ok: true,
         data: entities
       });
     } catch (error) {
+      console.error('[AUDIT ERROR] Error al obtener entidades:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Error al obtener entidades';
       res.status(500).json({
         ok: false,
-        error: 'Error al obtener entidades'
+        error: errorMessage
       });
     }
   }
